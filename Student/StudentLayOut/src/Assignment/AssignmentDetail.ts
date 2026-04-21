@@ -250,7 +250,7 @@ export function AssignmentDetail({ onBack }: AssignmentDetailProps) {
                     No feedback yet. Submit your assignment to receive feedback.
                   </p>
                 )}
-              </div>
+              </div>    
             </div>
           </div>
         </main>
