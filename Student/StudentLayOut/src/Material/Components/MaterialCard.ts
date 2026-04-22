@@ -4,7 +4,7 @@ import { Material } from '../data/mockData'
 type MaterialCardProps = {
   material: Material
 }
-function getFileTypeBadge(fileType: string) {
+export function getFileTypeBadge(fileType: string) {
   switch (fileType) {
     case 'PDF':
       return 'bg-red-50 text-red-600'
@@ -20,7 +20,7 @@ function getFileTypeBadge(fileType: string) {
       return 'bg-gray-50 text-gray-600'
   }
 }
-function getMaterialTypeBadge(type: string) {
+export function getMaterialTypeBadge(type: string) {
   switch (type) {
     case 'Grammar':
       return 'bg-red-50 text-red-700 border-red-100'
@@ -40,26 +40,22 @@ function getMaterialTypeBadge(type: string) {
 }
 export function MaterialCard({ material }: MaterialCardProps) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-3">
+    <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-3 hover:shadow-md transition-shadow">
       {/* Icon */}
       <div
         className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold ${material.iconColor}`}
       >
         {material.iconLetter}
       </div>
-
       {/* Title */}
-      <h3 className="text-base font-semibold text-gray-900 leading-tight">
+      <h3 className="text-base font-semibold text-gray-900 leading-tight line-clamp-2">
         {material.title}
       </h3>
-
       {/* Meta line */}
       <p className="text-sm text-gray-500">
-        {material.materialType} ·{' '}
         {material.category === 'All materials' ? 'General' : material.category}{' '}
         · {material.unit}
       </p>
-
       {/* Material type badge */}
       <div>
         <span
@@ -68,9 +64,8 @@ export function MaterialCard({ material }: MaterialCardProps) {
           {material.materialType}
         </span>
       </div>
-
       {/* Bottom row: file badge + download */}
-      <div className="flex items-center justify-between mt-auto pt-1">
+      <div className="flex items-center justify-between mt-auto pt-2">
         <span
           className={`inline-block px-2.5 py-1 rounded text-xs font-bold ${getFileTypeBadge(material.fileType)}`}
         >

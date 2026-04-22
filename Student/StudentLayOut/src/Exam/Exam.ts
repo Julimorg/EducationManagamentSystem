@@ -1,24 +1,10 @@
 import React, { useState } from 'react'
 import { Sidebar } from '../components/Sidebar'
 import { TopNav } from '../components/TopNav'
-import { ExamCard } from '../components/ExamCard'
+import { ExamCard, Exam } from '../components/ExamCard'
 import { Pagination } from '../components/Pagination'
 import { SearchIcon } from 'lucide-react'
-type ExamStatus = 'Pending' | 'Submitted' | 'Graded'
-type ExamType = 'Listening' | 'Reading' | 'Writing'
-type Exam = {
-  id: string
-  name: string
-  dateCreated: string
-  createdBy: string
-  duration: number
-  status: ExamStatus
-  examType: ExamType
-  participants: number
-  score?: number
-  maxScore?: number
-}
-const mockExams: Exam[] = [
+export const mockExams: Exam[] = [
   {
     id: '1',
     name: 'IELTS Listening Practice Test 1',

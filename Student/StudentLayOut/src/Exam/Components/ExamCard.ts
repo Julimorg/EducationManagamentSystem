@@ -1,9 +1,9 @@
 import React from 'react'
 import { ClockIcon, UsersIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
-type ExamStatus = 'Pending' | 'Submitted' | 'Graded'
-type ExamType = 'Listening' | 'Reading' | 'Writing'
-type Exam = {
+export type ExamStatus = 'Pending' | 'Submitted' | 'Graded'
+export type ExamType = 'Listening' | 'Reading' | 'Writing'
+export type Exam = {
   id: string
   name: string
   dateCreated: string
@@ -68,7 +68,6 @@ export function ExamCard({ exam }: ExamCardProps) {
           )}
         </div>
       </div>
-
       <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
         <div className="flex items-center gap-1.5">
           <ClockIcon className="w-4 h-4" />
@@ -79,7 +78,6 @@ export function ExamCard({ exam }: ExamCardProps) {
           <span>{exam.participants} participants</span>
         </div>
       </div>
-
       <div className="flex items-center gap-2">
         <span
           className={`px-2.5 py-1 rounded-md text-xs font-medium ${getExamTypeColor(exam.examType)}`}
