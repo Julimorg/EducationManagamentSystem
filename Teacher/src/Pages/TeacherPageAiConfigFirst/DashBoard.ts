@@ -746,6 +746,7 @@ function ClassPage({ onSelectClass }: { onSelectClass: (cls: ClassCard) => void 
 type StudentStatus = "Active" | "Restrict" | "Inactive" | "Archived";
 type AssignmentStatus = "Pending" | "Submitted" | "Graded" | "Late" | "Archived";
 type AttendanceStatus = "Scheduled" | "Completed" | "Archived";
+type SessionStatus = "Active" | "Inactive" | "Archived";
 type MaterialType = "PDF" | "PPTX" | "DOC" | "MP3" | "XLS";
 
 interface Student {
@@ -787,6 +788,18 @@ interface AttendanceSession {
   status: AttendanceStatus;
 }
 
+interface ClassSession {
+  id: string;
+  name: string;          // e.g. "Thứ 2 - 4 - 6"
+  timeSlot: string;      // e.g. "17:00 – 19:00"
+  days: string[];        // e.g. ["Mon","Wed","Fri"]
+  students: number;
+  status: SessionStatus;
+  startDate: string;
+  endDate: string;
+  colorKey: string;
+}
+
 interface Material {
   id: string;
   title: string;
@@ -823,6 +836,16 @@ const DETAIL_ATTENDANCE: AttendanceSession[] = [
   { id: "AT004", lessonName: "English Reading Practice", date: "Apr 16, 2025", session: "Morning", attended: 5, total: 8, status: "Completed" },
   { id: "AT005", lessonName: "History — WW2 Overview", date: "Apr 25, 2025", session: "Morning", attended: 0, total: 8, status: "Scheduled" },
   { id: "AT006", lessonName: "Literature Discussion", date: "Apr 14, 2025", session: "Evening", attended: 7, total: 8, status: "Archived" },
+];
+
+const CLASS_SESSIONS: ClassSession[] = [
+  { id: "SS001", name: "Thứ 2 - 4 - 6", timeSlot: "17:00 – 19:00", days: ["Mon","Wed","Fri"], students: 18, status: "Active",   startDate: "Jan 6, 2025",  endDate: "Jun 30, 2025", colorKey: "blue"   },
+  { id: "SS002", name: "Thứ 3 - 5 - 7", timeSlot: "08:00 – 10:00", days: ["Tue","Thu","Sat"], students: 16, status: "Active",   startDate: "Jan 7, 2025",  endDate: "Jun 30, 2025", colorKey: "green"  },
+  { id: "SS003", name: "Thứ 7 - CN",     timeSlot: "14:00 – 17:00", days: ["Sat","Sun"],       students: 22, status: "Active",   startDate: "Feb 1, 2025",  endDate: "Jul 31, 2025", colorKey: "purple" },
+  { id: "SS004", name: "Thứ 2 - 4",     timeSlot: "19:30 – 21:30", days: ["Mon","Wed"],        students: 14, status: "Inactive", startDate: "Mar 3, 2025",  endDate: "May 31, 2025", colorKey: "amber"  },
+  { id: "SS005", name: "Thứ 3 - 5",     timeSlot: "17:30 – 19:30", days: ["Tue","Thu"],        students: 20, status: "Active",   startDate: "Mar 10, 2025", endDate: "Aug 31, 2025", colorKey: "coral"  },
+  { id: "SS006", name: "Cuối tuần",      timeSlot: "09:00 – 12:00", days: ["Sat","Sun"],        students: 25, status: "Archived", startDate: "Jan 4, 2025",  endDate: "Apr 5, 2025",  colorKey: "gray"   },
+  { id: "SS007", name: "Thứ 2 - 4 - 6", timeSlot: "07:30 – 09:30", days: ["Mon","Wed","Fri"],  students: 12, status: "Active",   startDate: "Apr 7, 2025",  endDate: "Sep 30, 2025", colorKey: "teal"   },
 ];
 
 const DETAIL_MATERIALS: Material[] = [
@@ -1098,51 +1121,59 @@ function AssignmentSection({ totalStudents }: { totalStudents: number }) {
   );
 }
 
-// ─── Attendance Section ───────────────────────────────────────────────────────
+// ─── Attendance Section (inside Session Detail) ─────────────────────────────
 
 const ATT_STATUSES: AttendanceStatus[] = ["Scheduled", "Completed", "Archived"];
 const attSessStyle: Record<AttendanceStatus, string> = {
   Scheduled: "bg-blue-100 text-blue-600",
   Completed: "bg-emerald-100 text-emerald-700",
-  Archived: "bg-gray-100 text-gray-500",
+  Archived:  "bg-gray-100 text-gray-500",
 };
 
 function AttendanceSection({ totalStudents }: { totalStudents: number }) {
-  const [search, setSearch] = useState("");
+  const [search, setSearch]           = useState("");
   const [statusFilter, setStatusFilter] = useState<AttendanceStatus | "All">("All");
-  const [page, setPage] = useState(1);
+  const [page, setPage]               = useState(1);
 
-  const filtered = DETAIL_ATTENDANCE.filter((a) => {
-    return (a.lessonName.toLowerCase().includes(search.toLowerCase()) || a.date.toLowerCase().includes(search.toLowerCase())) &&
-      (statusFilter === "All" || a.status === statusFilter);
-  });
+  const filtered = DETAIL_ATTENDANCE.filter((a) =>
+    (a.lessonName.toLowerCase().includes(search.toLowerCase()) ||
+     a.date.toLowerCase().includes(search.toLowerCase())) &&
+    (statusFilter === "All" || a.status === statusFilter)
+  );
   const paged = filtered.slice((page - 1) * DET_PAGE_SIZE, page * DET_PAGE_SIZE);
 
   return (
     <div className="space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-          <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search by lesson or date..." />
+          <SearchInput
+            value={search}
+            onChange={(v) => { setSearch(v); setPage(1); }}
+            placeholder="Tìm theo bài học hoặc ngày..."
+          />
           <FilterPills
             options={["All", ...ATT_STATUSES] as (AttendanceStatus | "All")[]}
             active={statusFilter}
             onChange={(v) => { setStatusFilter(v); setPage(1); }}
           />
         </div>
-        <ActionBtn label="+ New Session" variant="create" />
+        <ActionBtn label="+ Điểm danh" variant="create" />
       </div>
 
-      <p className="text-xs text-gray-400">{filtered.length} sessions</p>
+      <p className="text-xs text-gray-400">{filtered.length} buổi học</p>
 
       {paged.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-100 py-12 flex flex-col items-center gap-2 text-gray-300">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <p className="text-sm text-gray-400">No sessions found</p>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <p className="text-sm text-gray-400">Không có buổi học nào</p>
         </div>
       ) : (
         <div className="space-y-3">
           {paged.map((a) => {
-            const pct = Math.round((a.attended / totalStudents) * 100);
+            const pct = Math.round((a.attended / Math.max(totalStudents, 1)) * 100);
             return (
               <div key={a.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between gap-4">
@@ -1153,20 +1184,23 @@ function AttendanceSection({ totalStudents }: { totalStudents: number }) {
                     </div>
                     <p className="text-xs text-gray-400 mb-3">{a.date} · {a.session} session</p>
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 max-w-[180px]">
+                      <div className="flex-1 max-w-[200px]">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-[11px] text-gray-400">Attended</span>
+                          <span className="text-[11px] text-gray-400">Có mặt</span>
                           <span className="text-[11px] font-medium text-gray-600">{a.attended} / {totalStudents}</span>
                         </div>
                         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${pct >= 75 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-400" : "bg-red-400"}`} style={{ width: `${pct}%` }} />
+                          <div
+                            className={`h-full rounded-full transition-all ${pct >= 75 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-400" : "bg-red-400"}`}
+                            style={{ width: `${pct}%` }}
+                          />
                         </div>
                       </div>
-                      <span className="text-xs font-medium text-gray-500">{pct}%</span>
+                      <span className="text-xs font-semibold text-gray-500">{pct}%</span>
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 flex-shrink-0">
-                    <ActionBtn label="Edit" variant="edit" />
+                    <ActionBtn label="Edit"    variant="edit" />
                     <ActionBtn label="Archive" variant="archive" />
                   </div>
                 </div>
@@ -1179,6 +1213,158 @@ function AttendanceSection({ totalStudents }: { totalStudents: number }) {
     </div>
   );
 }
+
+// ─── Session List Page (inside ClassDetail) ──────────────────────────────────
+
+const SESSION_STATUSES: SessionStatus[] = ["Active", "Inactive", "Archived"];
+const SESSION_PAGE_SIZE = 6;
+
+const sessionStatusStyle: Record<SessionStatus, string> = {
+  Active:   "bg-emerald-100 text-emerald-700",
+  Inactive: "bg-amber-100 text-amber-700",
+  Archived: "bg-gray-100 text-gray-500",
+};
+
+const sessionDayColor: Record<SessionStatus, { card: string; icon: string }> = {
+  Active:   { card: "border-l-emerald-400", icon: "bg-emerald-100 text-emerald-600" },
+  Inactive: { card: "border-l-amber-400",   icon: "bg-amber-100 text-amber-600" },
+  Archived: { card: "border-l-gray-300",    icon: "bg-gray-100 text-gray-400" },
+};
+
+const DAY_LABELS: Record<string, string> = {
+  Mon: "T2", Tue: "T3", Wed: "T4", Thu: "T5", Fri: "T6", Sat: "T7", Sun: "CN",
+};
+
+function SessionListPage({
+  cls,
+  onSelectSession,
+}: {
+  cls: ClassCard;
+  onSelectSession: (s: ClassSession) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<SessionStatus | "All">("All");
+  const [page, setPage] = useState(1);
+
+  const filtered = CLASS_SESSIONS.filter((s) => {
+    const q = search.toLowerCase();
+    return (
+      (s.name.toLowerCase().includes(q) || s.timeSlot.toLowerCase().includes(q)) &&
+      (statusFilter === "All" || s.status === statusFilter)
+    );
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / SESSION_PAGE_SIZE));
+  const curPage    = Math.min(page, totalPages);
+  const paged      = filtered.slice((curPage - 1) * SESSION_PAGE_SIZE, curPage * SESSION_PAGE_SIZE);
+
+  return (
+    <div className="space-y-5">
+      {/* Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+          <SearchInput
+            value={search}
+            onChange={(v) => { setSearch(v); setPage(1); }}
+            placeholder="Tìm theo tên hoặc giờ học..."
+          />
+          <FilterPills
+            options={["All", ...SESSION_STATUSES] as (SessionStatus | "All")[]}
+            active={statusFilter}
+            onChange={(v) => { setStatusFilter(v); setPage(1); }}
+          />
+        </div>
+        <ActionBtn label="+ Tạo Session" variant="create" />
+      </div>
+
+      <p className="text-xs text-gray-400">
+        {filtered.length === 0
+          ? "Không tìm thấy session nào"
+          : `Hiển thị ${(curPage - 1) * SESSION_PAGE_SIZE + 1}–${Math.min(curPage * SESSION_PAGE_SIZE, filtered.length)} / ${filtered.length} sessions`}
+      </p>
+
+      {/* Session Cards Grid */}
+      {paged.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-100 py-16 flex flex-col items-center gap-3 text-gray-300">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <p className="text-sm text-gray-400">Không có session nào</p>
+          <button
+            onClick={() => { setSearch(""); setStatusFilter("All"); }}
+            className="text-xs text-indigo-500 hover:text-indigo-700"
+          >
+            Xoá bộ lọc
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {paged.map((s) => {
+            const col  = colorMap[s.colorKey] ?? colorMap.gray;
+            const sCls = sessionDayColor[s.status];
+            return (
+              <div
+                key={s.id}
+                onClick={() => onSelectSession(s)}
+                className={`bg-white rounded-xl border border-gray-100 border-l-4 ${sCls.card} shadow-sm p-5 flex flex-col gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer`}
+              >
+                {/* Top row */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${col.bg} ${col.text}`}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  </div>
+                  <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full flex-shrink-0 ${sessionStatusStyle[s.status]}`}>
+                    {s.status}
+                  </span>
+                </div>
+
+                {/* Name + time */}
+                <div>
+                  <p className="font-semibold text-gray-800 text-base leading-tight">{s.name}</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <p className="text-sm text-gray-500">{s.timeSlot}</p>
+                  </div>
+                </div>
+
+                {/* Day pills */}
+                <div className="flex flex-wrap gap-1.5">
+                  {s.days.map((d) => (
+                    <span key={d} className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${sCls.icon}`}>
+                      {DAY_LABELS[d] ?? d}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Footer */}
+                <div className="border-t border-gray-50 pt-3 flex items-center justify-between text-xs text-gray-400">
+                  <div className="flex items-center gap-1.5">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <span>{s.students} học sinh</span>
+                  </div>
+                  <span className="text-[10px]">{s.startDate} → {s.endDate}</span>
+                </div>
+
+                {/* Actions — stop propagation so card click doesn't fire */}
+                <div className="flex gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
+                  <ActionBtn label="Edit" variant="edit" />
+                  <ActionBtn label="Archive" variant="archive" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <Pagination
+        page={curPage}
+        total={filtered.length}
+        pageSize={SESSION_PAGE_SIZE}
+        onChange={(p) => setPage(p)}
+      />
+    </div>
+  );
+}
+
+// ─── Session Detail Page ──────────────────────────────────────────────────────
 
 // ─── Material Section ─────────────────────────────────────────────────────────
 
@@ -1287,26 +1473,135 @@ function MaterialSection() {
   );
 }
 
-// ─── Class Detail Page ────────────────────────────────────────────────────────
+// ─── Session Detail (tabs: Students / Assignments / Attendance / Materials) ────
 
 type DetailTab = "Students" | "Assignments" | "Attendance" | "Materials";
 const DETAIL_TABS: DetailTab[] = ["Students", "Assignments", "Attendance", "Materials"];
 
-function ClassDetailPage({ cls, onBack }: { cls: ClassCard; onBack: () => void }) {
+function SessionDetailPage({
+  cls,
+  session,
+  onBackToClass,
+  onBackToSessions,
+}: {
+  cls: ClassCard;
+  session: ClassSession;
+  onBackToClass: () => void;
+  onBackToSessions: () => void;
+}) {
   const [activeTab, setActiveTab] = useState<DetailTab>("Students");
 
   const tabIcons: Record<DetailTab, JSX.Element> = {
-    Students: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+    Students:    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
     Assignments: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
-    Attendance: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-    Materials: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
+    Attendance:  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+    Materials:   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
   };
 
-  const color = colorMap[cls.colorKey] ?? colorMap.gray;
+  const col   = colorMap[session.colorKey] ?? colorMap.gray;
+  const sCls  = sessionDayColor[session.status];
 
   return (
     <div className="space-y-5">
-      {/* Breadcrumb + back */}
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm flex-wrap">
+        <button onClick={onBackToClass} className="flex items-center gap-1.5 text-gray-400 hover:text-indigo-600 transition-colors font-medium">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Class
+        </button>
+        <span className="text-gray-300">/</span>
+        <button onClick={onBackToSessions} className="text-gray-400 hover:text-indigo-600 transition-colors font-medium">
+          {cls.name}
+        </button>
+        <span className="text-gray-300">/</span>
+        <span className="text-gray-700 font-medium">{session.name}</span>
+      </div>
+
+      {/* Session header card */}
+      <div className={`bg-white rounded-xl border border-gray-100 border-l-4 ${sCls.card} shadow-sm p-5`}>
+        <div className="flex items-start gap-4 flex-wrap">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${col.bg} ${col.text}`}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h2 className="text-lg font-semibold text-gray-800">{session.name}</h2>
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${sessionStatusStyle[session.status]}`}>{session.status}</span>
+            </div>
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              <span className="flex items-center gap-1 text-sm text-gray-400">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {session.timeSlot}
+              </span>
+              <div className="flex gap-1">
+                {session.days.map((d) => (
+                  <span key={d} className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${sCls.icon}`}>
+                    {DAY_LABELS[d] ?? d}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-6 flex-wrap text-center">
+            {[
+              { label: "Học sinh",   value: session.students },
+              { label: "Bắt đầu",   value: session.startDate },
+              { label: "Kết thúc",  value: session.endDate },
+            ].map((stat) => (
+              <div key={stat.label}>
+                <p className="text-xs text-gray-400">{stat.label}</p>
+                <p className="text-sm font-semibold text-gray-700 mt-0.5">{stat.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-gray-100 overflow-x-auto">
+        {DETAIL_TABS.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-all -mb-px
+              ${activeTab === tab ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+          >
+            {tabIcons[tab]}
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      {activeTab === "Students"    && <StudentTable />}
+      {activeTab === "Assignments" && <AssignmentSection totalStudents={session.students} />}
+      {activeTab === "Attendance"  && <AttendanceSection totalStudents={session.students} />}
+      {activeTab === "Materials"   && <MaterialSection />}
+    </div>
+  );
+}
+
+// ─── Class Detail Page (shows Session List) ───────────────────────────────────
+
+function ClassDetailPage({ cls, onBack }: { cls: ClassCard; onBack: () => void }) {
+  const [selectedSession, setSelectedSession] = useState<ClassSession | null>(null);
+
+  const color = colorMap[cls.colorKey] ?? colorMap.gray;
+
+  if (selectedSession) {
+    return (
+      <SessionDetailPage
+        cls={cls}
+        session={selectedSession}
+        onBackToClass={onBack}
+        onBackToSessions={() => setSelectedSession(null)}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm">
         <button onClick={onBack} className="flex items-center gap-1.5 text-gray-400 hover:text-indigo-600 transition-colors font-medium">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -1327,13 +1622,13 @@ function ClassDetailPage({ cls, onBack }: { cls: ClassCard; onBack: () => void }
               <h2 className="text-lg font-semibold text-gray-800">{cls.name}</h2>
               <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyle[cls.status]}`}>{cls.status}</span>
             </div>
-            <p className="text-sm text-gray-400 mt-0.5">{cls.subject} · {cls.sessions.join(" & ")} session</p>
+            <p className="text-sm text-gray-400 mt-0.5">{cls.subject}</p>
           </div>
           <div className="flex gap-6 flex-wrap text-center">
             {[
-              { label: "Students", value: cls.students },
-              { label: "Sessions", value: cls.sessions.length },
-              { label: "Created", value: cls.createdAt },
+              { label: "Tổng học sinh",  value: cls.students },
+              { label: "Số sessions",    value: CLASS_SESSIONS.filter(s => s.status === "Active").length },
+              { label: "Ngày tạo",       value: cls.createdAt },
             ].map((stat) => (
               <div key={stat.label}>
                 <p className="text-xs text-gray-400">{stat.label}</p>
@@ -1344,22 +1639,13 @@ function ClassDetailPage({ cls, onBack }: { cls: ClassCard; onBack: () => void }
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-100">
-        {DETAIL_TABS.map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-all -mb-px ${activeTab === tab ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-400 hover:text-gray-600"}`}>
-            {tabIcons[tab]}
-            {tab}
-          </button>
-        ))}
+      {/* Section heading */}
+      <div className="flex items-center justify-between pt-1">
+        <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Danh sách Sessions</h3>
       </div>
 
-      {/* Tab content */}
-      {activeTab === "Students" && <StudentTable />}
-      {activeTab === "Assignments" && <AssignmentSection totalStudents={cls.students} />}
-      {activeTab === "Attendance" && <AttendanceSection totalStudents={cls.students} />}
-      {activeTab === "Materials" && <MaterialSection />}
+      {/* Session list */}
+      <SessionListPage cls={cls} onSelectSession={(s) => setSelectedSession(s)} />
     </div>
   );
 }
