@@ -748,6 +748,8 @@ type AssignmentStatus = "Pending" | "Submitted" | "Graded" | "Late" | "Archived"
 type AttendanceStatus = "Scheduled" | "Completed" | "Archived";
 type SessionStatus = "Active" | "Inactive" | "Archived";
 type MaterialType = "PDF" | "PPTX" | "DOC" | "MP3" | "XLS";
+type ExamStatus = "Scheduled" | "Ongoing" | "Completed" | "Archived";
+type ExamType = "Listening" | "Reading" | "Writing" | "Full Test" | "Mini Test";
 
 interface Student {
   id: string;
@@ -856,6 +858,20 @@ const DETAIL_MATERIALS: Material[] = [
   { id: "M005", title: "Calculus Exercise Set", type: "PDF", subject: "Math · Exercise", unit: "Unit 4", size: "0.9 MB", colorKey: "coral" },
   { id: "M006", title: "Grammar Guide", type: "DOC", subject: "English · Lecture", unit: "Unit 1", size: "1.2 MB", colorKey: "teal" },
   { id: "M007", title: "Cell Biology Slides", type: "PPTX", subject: "Biology · Lecture", unit: "Unit 2", size: "3.7 MB", colorKey: "pink" },
+];
+
+const DETAIL_EXAMS: {
+  id: string; title: string; createdAt: string; createdTime: string;
+  createdBy: string; type: ExamType; status: ExamStatus;
+  participated: number; total: number; duration: number;
+}[] = [
+  { id: "EX001", title: "Midterm — Math",             createdAt: "Apr 20, 2025", createdTime: "08:30", createdBy: "Mr. Tran Long", type: "Full Test",  status: "Completed", participated: 8, total: 8,  duration: 60  },
+  { id: "EX002", title: "Biology Quiz 2",              createdAt: "Apr 18, 2025", createdTime: "14:00", createdBy: "Mr. Tran Long", type: "Reading",    status: "Completed", participated: 7, total: 8,  duration: 30  },
+  { id: "EX003", title: "IELTS Listening Practice 3", createdAt: "Apr 25, 2025", createdTime: "17:00", createdBy: "Mr. Tran Long", type: "Listening",  status: "Scheduled", participated: 0, total: 8,  duration: 40  },
+  { id: "EX004", title: "Writing Task 2 Mock",        createdAt: "Apr 15, 2025", createdTime: "09:00", createdBy: "Ms. Lan Anh",   type: "Writing",    status: "Completed", participated: 6, total: 8,  duration: 60  },
+  { id: "EX005", title: "Mini Reading Test — Unit 3", createdAt: "Apr 22, 2025", createdTime: "10:30", createdBy: "Mr. Tran Long", type: "Mini Test",  status: "Completed", participated: 8, total: 8,  duration: 20  },
+  { id: "EX006", title: "End-of-Term Full Mock",      createdAt: "May 2, 2025",  createdTime: "08:00", createdBy: "Mr. Tran Long", type: "Full Test",  status: "Scheduled", participated: 0, total: 8,  duration: 180 },
+  { id: "EX007", title: "Vocabulary Sprint Quiz",     createdAt: "Apr 10, 2025", createdTime: "16:00", createdBy: "Ms. Lan Anh",   type: "Mini Test",  status: "Archived",  participated: 5, total: 8,  duration: 15  },
 ];
 
 // ─── Shared Helpers ───────────────────────────────────────────────────────────
@@ -1210,6 +1226,215 @@ function AttendanceSection({ totalStudents }: { totalStudents: number }) {
         </div>
       )}
       <Pagination page={page} total={filtered.length} pageSize={DET_PAGE_SIZE} onChange={(p) => setPage(p)} />
+    </div>
+  );
+}
+
+// ─── Exam Section ────────────────────────────────────────────────────────────
+
+const EXAM_STATUSES: ExamStatus[] = ["Scheduled", "Ongoing", "Completed", "Archived"];
+const EXAM_TYPES: ExamType[]      = ["Listening", "Reading", "Writing", "Full Test", "Mini Test"];
+
+const examStatusStyle: Record<ExamStatus, { badge: string; border: string; dot: string }> = {
+  Scheduled: { badge: "bg-blue-100 text-blue-700",     border: "border-l-blue-400",    dot: "bg-blue-400"    },
+  Ongoing:   { badge: "bg-violet-100 text-violet-700", border: "border-l-violet-400",  dot: "bg-violet-400"  },
+  Completed: { badge: "bg-emerald-100 text-emerald-700", border: "border-l-emerald-400", dot: "bg-emerald-500" },
+  Archived:  { badge: "bg-gray-100 text-gray-500",     border: "border-l-gray-300",    dot: "bg-gray-300"    },
+};
+
+const examTypeMeta: Record<ExamType, { emoji: string; color: string; bg: string }> = {
+  Listening:   { emoji: "🎧", color: "text-purple-700",  bg: "bg-purple-50"  },
+  Reading:     { emoji: "📖", color: "text-emerald-700", bg: "bg-emerald-50" },
+  Writing:     { emoji: "✍️", color: "text-blue-700",    bg: "bg-blue-50"    },
+  "Full Test": { emoji: "📋", color: "text-indigo-700",  bg: "bg-indigo-50"  },
+  "Mini Test": { emoji: "⚡", color: "text-teal-700",    bg: "bg-teal-50"    },
+};
+
+const EXAM_PAGE_SIZE = 4;
+
+function ExamSection({ totalStudents }: { totalStudents: number }) {
+  const [search,      setSearch]      = useState("");
+  const [statusFilter,setStatusFilter] = useState<ExamStatus | "All">("All");
+  const [typeFilter,  setTypeFilter]  = useState<ExamType | "All">("All");
+  const [page,        setPage]        = useState(1);
+
+  const filtered = DETAIL_EXAMS.filter((e) => {
+    const q = search.toLowerCase();
+    return (
+      (e.title.toLowerCase().includes(q) || e.createdBy.toLowerCase().includes(q)) &&
+      (statusFilter === "All" || e.status === statusFilter) &&
+      (typeFilter   === "All" || e.type   === typeFilter)
+    );
+  });
+
+  const paged = filtered.slice((page - 1) * EXAM_PAGE_SIZE, page * EXAM_PAGE_SIZE);
+
+  const reset = (setter: (v: any) => void, v: any) => { setter(v); setPage(1); };
+
+  const fmtDuration = (min: number) =>
+    min >= 60 ? `${Math.floor(min / 60)}h${min % 60 ? ` ${min % 60}m` : ""}` : `${min}m`;
+
+  return (
+    <div className="space-y-4">
+      {/* Controls row */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center flex-1">
+          <SearchInput
+            value={search}
+            onChange={(v) => reset(setSearch, v)}
+            placeholder="Tìm theo tên exam hoặc người tạo..."
+          />
+          <FilterPills
+            options={["All", ...EXAM_STATUSES] as (ExamStatus | "All")[]}
+            active={statusFilter}
+            onChange={(v) => reset(setStatusFilter, v)}
+          />
+        </div>
+        <ActionBtn label="+ Tạo Exam" variant="create" />
+      </div>
+
+      {/* Type filter */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Loại:</span>
+        {(["All", ...EXAM_TYPES] as const).map((t) => {
+          const isActive = typeFilter === t;
+          return (
+            <button
+              key={t}
+              onClick={() => reset(setTypeFilter, t)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all
+                ${isActive
+                  ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                  : "bg-white text-gray-500 border-gray-200 hover:border-indigo-200 hover:text-indigo-500"}`}
+            >
+              {t !== "All" && <span className="text-sm leading-none">{examTypeMeta[t as ExamType].emoji}</span>}
+              {t}
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-xs text-gray-400">{filtered.length} exam{filtered.length !== 1 ? "s" : ""}</p>
+
+      {/* Empty state */}
+      {paged.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-100 py-14 flex flex-col items-center gap-3 text-gray-300">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="1"/>
+            <line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="12" y2="16"/>
+          </svg>
+          <p className="text-sm text-gray-400">Không tìm thấy exam nào</p>
+          <button
+            onClick={() => { reset(setSearch, ""); reset(setStatusFilter, "All"); reset(setTypeFilter, "All"); }}
+            className="text-xs text-indigo-500 hover:text-indigo-700 transition-colors"
+          >
+            Xoá bộ lọc
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {paged.map((exam) => {
+            const sCfg   = examStatusStyle[exam.status];
+            const tMeta  = examTypeMeta[exam.type];
+            const pct    = exam.total > 0 ? Math.round((exam.participated / exam.total) * 100) : 0;
+            const barColor = pct >= 100 ? "bg-emerald-500" : pct >= 60 ? "bg-indigo-500" : "bg-amber-400";
+
+            return (
+              <div
+                key={exam.id}
+                className={`bg-white rounded-xl border border-gray-100 border-l-4 ${sCfg.border} shadow-sm hover:shadow-md transition-all duration-200`}
+              >
+                {/* Card body */}
+                <div className="p-5 space-y-4">
+                  {/* Top row */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${tMeta.bg}`}>
+                        {tMeta.emoji}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-800 text-sm leading-snug">{exam.title}</p>
+                        <span className={`inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-md ${tMeta.bg} ${tMeta.color}`}>
+                          {exam.type}
+                        </span>
+                      </div>
+                    </div>
+                    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0 ${sCfg.badge}`}>
+                      {exam.status}
+                    </span>
+                  </div>
+
+                  {/* Meta grid */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase font-medium tracking-wide">Ngày tạo</p>
+                      <p className="text-xs text-gray-700 font-medium mt-0.5">{exam.createdAt}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase font-medium tracking-wide">Giờ tạo</p>
+                      <p className="text-xs text-gray-700 font-medium mt-0.5">{exam.createdTime}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase font-medium tracking-wide">Tạo bởi</p>
+                      <p className="text-xs text-gray-700 font-medium mt-0.5">{exam.createdBy}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase font-medium tracking-wide">Thời lượng</p>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <p className="text-xs text-gray-700 font-medium">{fmtDuration(exam.duration)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Participation bar */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Tham gia</span>
+                      <span className="text-xs font-semibold text-gray-600">
+                        {exam.participated} / {totalStudents}
+                        <span className="text-gray-400 font-normal ml-1">({pct}%)</span>
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer actions */}
+                <div className="px-5 py-3 border-t border-gray-50 bg-gray-50/50 flex items-center gap-2">
+                  <ActionBtn label="Edit" variant="edit" />
+                  <ActionBtn label="Archive" variant="archive" />
+                  {exam.status === "Scheduled" && (
+                    <button className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                      Bắt đầu
+                    </button>
+                  )}
+                  {exam.status === "Completed" && (
+                    <button className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-emerald-200 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                      Xem kết quả
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <Pagination
+        page={page}
+        total={filtered.length}
+        pageSize={EXAM_PAGE_SIZE}
+        onChange={(p) => setPage(p)}
+      />
     </div>
   );
 }
@@ -1583,11 +1808,15 @@ function SessionDetailPage({
 
 // ─── Class Detail Page (shows Session List) ───────────────────────────────────
 
+type ClassMgmtTab = "Sessions" | "Exams";
+
 function ClassDetailPage({ cls, onBack }: { cls: ClassCard; onBack: () => void }) {
   const [selectedSession, setSelectedSession] = useState<ClassSession | null>(null);
+  const [activeTab,       setActiveTab]       = useState<ClassMgmtTab>("Sessions");
 
   const color = colorMap[cls.colorKey] ?? colorMap.gray;
 
+  // ── When a session is selected → go into SessionDetailPage ──
   if (selectedSession) {
     return (
       <SessionDetailPage
@@ -1598,6 +1827,19 @@ function ClassDetailPage({ cls, onBack }: { cls: ClassCard; onBack: () => void }
       />
     );
   }
+
+  const mgmtTabs: { id: ClassMgmtTab; label: string; icon: JSX.Element }[] = [
+    {
+      id: "Sessions",
+      label: "Sessions",
+      icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+    },
+    {
+      id: "Exams",
+      label: "Exams",
+      icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="12" y2="16"/></svg>,
+    },
+  ];
 
   return (
     <div className="space-y-5">
@@ -1626,9 +1868,10 @@ function ClassDetailPage({ cls, onBack }: { cls: ClassCard; onBack: () => void }
           </div>
           <div className="flex gap-6 flex-wrap text-center">
             {[
-              { label: "Tổng học sinh",  value: cls.students },
-              { label: "Số sessions",    value: CLASS_SESSIONS.filter(s => s.status === "Active").length },
-              { label: "Ngày tạo",       value: cls.createdAt },
+              { label: "Tổng học sinh", value: cls.students },
+              { label: "Sessions",      value: CLASS_SESSIONS.filter(s => s.status === "Active").length },
+              { label: "Exams",         value: DETAIL_EXAMS.length },
+              { label: "Ngày tạo",      value: cls.createdAt },
             ].map((stat) => (
               <div key={stat.label}>
                 <p className="text-xs text-gray-400">{stat.label}</p>
@@ -1639,13 +1882,42 @@ function ClassDetailPage({ cls, onBack }: { cls: ClassCard; onBack: () => void }
         </div>
       </div>
 
-      {/* Section heading */}
-      <div className="flex items-center justify-between pt-1">
-        <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Danh sách Sessions</h3>
+      {/* Tabs: Sessions | Exams */}
+      <div className="flex gap-1 border-b border-gray-100">
+        {mgmtTabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-all -mb-px whitespace-nowrap
+              ${activeTab === tab.id
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-400 hover:text-gray-600"}`}
+          >
+            {tab.icon}
+            {tab.label}
+            {tab.id === "Sessions" && (
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-0.5
+                ${activeTab === "Sessions" ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-400"}`}>
+                {CLASS_SESSIONS.length}
+              </span>
+            )}
+            {tab.id === "Exams" && (
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-0.5
+                ${activeTab === "Exams" ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-400"}`}>
+                {DETAIL_EXAMS.length}
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
-      {/* Session list */}
-      <SessionListPage cls={cls} onSelectSession={(s) => setSelectedSession(s)} />
+      {/* Tab content */}
+      {activeTab === "Sessions" && (
+        <SessionListPage cls={cls} onSelectSession={(s) => setSelectedSession(s)} />
+      )}
+      {activeTab === "Exams" && (
+        <ExamSection totalStudents={cls.students} />
+      )}
     </div>
   );
 }
