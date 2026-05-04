@@ -6,12 +6,10 @@ import 'antd/dist/reset.css';
 // import { useEffect, useState } from 'react';
 // import { BrowserRouter } from 'react-router-dom';
 import 'react-toastify/dist/ReactToastify.css';
-// import Loading from '@/Components/Loading';
-
-import DefaultRouter from '@/Router/DefaultRoute/index';
 // import { useIsFetching, useIsMutating } from '@tanstack/react-query';
 import React from 'react';
 import { BrowserRouter, HashRouter } from 'react-router-dom';
+import DefaultRouter from './Router';
 // import PrivateRoute from './Router/PrivateRoute';
 function App() {
   // check loading react-query

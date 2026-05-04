@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { Search } from 'lucide-react'
-import { Sidebar } from '../components/Sidebar'
-import { TopNav } from '../components/TopNav'
+import { ANT_MARK } from 'antd/es/locale'
 type AssignmentsProps = {
   onSelectAssignment?: (id: string) => void
 }
