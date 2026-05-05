@@ -6,6 +6,11 @@ import Logout  from '@/Auth/LogOut'
 import { NotFoundPage } from '@/Pages/NotFoundPage/NotFoundPage'
 import { AppLayout } from '@/Pages/AppLayout'
 import { DashBoard } from '@/Pages/DashBoard/DashBoard'
+import { AssignmentsPage } from '@/Pages/Assignment/Assignment'
+import { AssignmentDetailPage } from '@/Pages/Assignment/AssignmentDetail'
+import { ProfilePage } from '@/Pages/Profile/Profile'
+import { ExamDetailPage } from '@/Pages/Exam/ExamDetail'
+import { ExamsPage } from '@/Pages/Exam/Exam'
 
 
 const DefaultRouter = () => {
@@ -17,6 +22,11 @@ const DefaultRouter = () => {
 
       <Route element={<AppLayout />}>
         <Route path="/dashboard"        element={<DashBoard />} />
+        <Route path="/assignments"        element={<AssignmentsPage />} />
+        <Route path="/assignments/:id"        element={<AssignmentDetailPage />} />
+        <Route path="/profile"        element={<ProfilePage />} />
+        <Route path="/exams"     element={<ExamsPage />} />
+        <Route path="/exams/:id" element={<ExamDetailPage />} />
         {/* <Route path="/assignments"      element={<AssignmentsPage />} />
         <Route path="/exams"            element={<ExamsPage />} />
         <Route path="/materials"        element={<MaterialsPage />} />
