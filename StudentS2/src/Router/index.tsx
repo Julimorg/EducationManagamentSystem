@@ -14,6 +14,7 @@ import { ExamDetailPage } from '@/Pages/Exam/ExamDetail'
 import { NotFoundPage } from '@/Pages/NotFoundPage/NotFoundPage'
 import { ProfilePage } from '@/Pages/Profile/Profile'
 import { ListeningExamWrapper, ReadingExamWrapper, WritingExamWrapper } from './ExamRouterWrapper'
+import { MaterialsPage } from '@/Pages/Material/MaterialPage'
 
 const DefaultRouter = () => (
   <Routes>
@@ -48,7 +49,7 @@ const DefaultRouter = () => (
       <Route path="/assignments/:id"  element={<AssignmentDetailPage />} />
       <Route path="/exams"            element={<ExamsPage />} />
       <Route path="/exams/:id"        element={<ExamDetailPage />} />
-      {/* <Route path="/materials"        element={<MaterialsPage />} /> */}
+      <Route path="/materials"        element={<MaterialsPage />} />
       <Route path="/profile"          element={<ProfilePage />} />
       {/* <Route path="/notifications"    element={<NotificationsPage />} />
       <Route path="/feedback"         element={<FeedbackPage />} />
