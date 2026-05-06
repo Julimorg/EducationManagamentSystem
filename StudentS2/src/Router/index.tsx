@@ -1,46 +1,64 @@
 import React from 'react'
-import { Routes, Route, Outlet } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
+
+// Auth / standalone
 import Login   from '@/Auth/Login'
 import Logout  from '@/Auth/LogOut'
-
-import { NotFoundPage } from '@/Pages/NotFoundPage/NotFoundPage'
+import Invoice from '@/Pages/Ticket/Invoice/Invoice'
 import { AppLayout } from '@/Pages/AppLayout'
-import { DashBoard } from '@/Pages/DashBoard/DashBoard'
 import { AssignmentsPage } from '@/Pages/Assignment/Assignment'
 import { AssignmentDetailPage } from '@/Pages/Assignment/AssignmentDetail'
-import { ProfilePage } from '@/Pages/Profile/Profile'
-import { ExamDetailPage } from '@/Pages/Exam/ExamDetail'
+import { DashBoard } from '@/Pages/DashBoard/DashBoard'
 import { ExamsPage } from '@/Pages/Exam/Exam'
+import { ExamDetailPage } from '@/Pages/Exam/ExamDetail'
+import { NotFoundPage } from '@/Pages/NotFoundPage/NotFoundPage'
+import { ProfilePage } from '@/Pages/Profile/Profile'
+import { ListeningExamWrapper, ReadingExamWrapper, WritingExamWrapper } from './ExamRouterWrapper'
 
+const DefaultRouter = () => (
+  <Routes>
 
-const DefaultRouter = () => {
-  return (
-    <Routes>
+    {/* ── Standalone ── */}
+    <Route path="/"        element={<Login />} />
+    <Route path="/logout"  element={<Logout />} />
+    <Route path="/invoice" element={<Invoice />} />
 
-      <Route path="/"        element={<Login />} />
-      <Route path="/logout"  element={<Logout />} />
+    {/*
+     * ── Exam layouts (fullscreen, NGOÀI AppLayout) ──────
+     * Đặt TRƯỚC shell layout để router match :category
+     * trước khi match :id của ExamDetailPage.
+     */}
+    <Route
+      path="/exams/:id/listening"
+      element={<ListeningExamWrapper />}
+    />
+    <Route
+      path="/exams/:id/reading"
+      element={<ReadingExamWrapper />}
+    />
+    <Route
+      path="/exams/:id/writing"
+      element={<WritingExamWrapper />}
+    />
 
-      <Route element={<AppLayout />}>
-        <Route path="/dashboard"        element={<DashBoard />} />
-        <Route path="/assignments"        element={<AssignmentsPage />} />
-        <Route path="/assignments/:id"        element={<AssignmentDetailPage />} />
-        <Route path="/profile"        element={<ProfilePage />} />
-        <Route path="/exams"     element={<ExamsPage />} />
-        <Route path="/exams/:id" element={<ExamDetailPage />} />
-        {/* <Route path="/assignments"      element={<AssignmentsPage />} />
-        <Route path="/exams"            element={<ExamsPage />} />
-        <Route path="/materials"        element={<MaterialsPage />} />
-        <Route path="/profile"          element={<ProfilePage />} />
-        <Route path="/notifications"    element={<NotificationsPage />} />
-        <Route path="/feedback"         element={<FeedbackPage />} />
-        <Route path="/session-transfer" element={<SessionTransferPage />} /> */}
-      </Route>
+    {/* ── Shell layout (sidebar + header) ── */}
+    <Route element={<AppLayout />}>
+      <Route path="/dashboard"        element={<DashBoard />} />
+      <Route path="/assignments"      element={<AssignmentsPage />} />
+      <Route path="/assignments/:id"  element={<AssignmentDetailPage />} />
+      <Route path="/exams"            element={<ExamsPage />} />
+      <Route path="/exams/:id"        element={<ExamDetailPage />} />
+      {/* <Route path="/materials"        element={<MaterialsPage />} /> */}
+      <Route path="/profile"          element={<ProfilePage />} />
+      {/* <Route path="/notifications"    element={<NotificationsPage />} />
+      <Route path="/feedback"         element={<FeedbackPage />} />
+      <Route path="/session-transfer" element={<SessionTransferPage />} /> */}
+    </Route>
 
-      {/* ── 404 ── */}
-      <Route path="*" element={<NotFoundPage />} />
+    <Route path="*" element={<NotFoundPage />} />
 
-    </Routes>
-  )
-}
+  </Routes>
+)
 
 export default DefaultRouter
+
