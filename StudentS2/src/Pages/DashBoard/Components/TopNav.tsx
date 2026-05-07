@@ -65,12 +65,12 @@ export function TopNav({ onToggleSidebar }: TopNavProps) {
 
       {/* Right */}
       <div className="flex items-center gap-3 sm:gap-4">
-        <span className="hidden md:inline text-xs text-gray-400">
+        {/* <span className="hidden md:inline text-xs text-gray-400">
           Sat, Apr 18 2026
-        </span>
+        </span> */}
 
         {/* Bell */}
-        <div className="relative" ref={ref}>
+        {/* <div className="relative" ref={ref}>
           <button
             onClick={() => setOpen((v) => !v)}
             className="relative w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
@@ -119,7 +119,7 @@ export function TopNav({ onToggleSidebar }: TopNavProps) {
               </div>
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* User */}
         <div className="flex items-center gap-2">

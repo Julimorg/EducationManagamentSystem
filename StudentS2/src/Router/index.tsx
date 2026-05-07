@@ -1,8 +1,6 @@
 import React from 'react'
 import { Routes, Route } from 'react-router-dom'
 
-// Auth / standalone
-import Login   from '@/Auth/Login'
 import Logout  from '@/Auth/LogOut'
 import Invoice from '@/Pages/Ticket/Invoice/Invoice'
 import { AppLayout } from '@/Pages/AppLayout'
@@ -15,15 +13,17 @@ import { NotFoundPage } from '@/Pages/NotFoundPage/NotFoundPage'
 import { ProfilePage } from '@/Pages/Profile/Profile'
 import { ListeningExamWrapper, ReadingExamWrapper, WritingExamWrapper } from './ExamRouterWrapper'
 import { MaterialsPage } from '@/Pages/Material/MaterialPage'
+import { LoginPage } from '@/Auth/Login/LoginPage'
+import { ForgotPasswordPage } from '@/Auth/ForgotPass/ForgotPasswordPage'
 
 const DefaultRouter = () => (
   <Routes>
 
     {/* ── Standalone ── */}
-    <Route path="/"        element={<Login />} />
+    <Route path="/login"        element={<LoginPage />} />
     <Route path="/logout"  element={<Logout />} />
     <Route path="/invoice" element={<Invoice />} />
-
+    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
     {/*
      * ── Exam layouts (fullscreen, NGOÀI AppLayout) ──────
      * Đặt TRƯỚC shell layout để router match :category
