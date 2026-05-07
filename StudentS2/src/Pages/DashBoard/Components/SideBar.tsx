@@ -16,9 +16,9 @@ const mainLinks = [
 
 const accountLinks = [
   { label: 'Profile',          to: '/profile' },
-  { label: 'Notifications',    to: '/notifications' },
-  { label: 'Feedback',         to: '/feedback' },
-  { label: 'Session Transfer', to: '/session-transfer' },
+  // { label: 'Notifications',    to: '/notifications' },
+  // { label: 'Feedback',         to: '/feedback' },
+  // { label: 'Session Transfer', to: '/session-transfer' },
 ]
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
