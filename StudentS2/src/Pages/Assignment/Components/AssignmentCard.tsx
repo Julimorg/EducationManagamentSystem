@@ -4,139 +4,146 @@ import {
   Send,
   Tag,
   Calendar,
+  Clock,
+  MessageSquareQuote,
+  CheckCircle2,
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────
 export type AssignmentStatus = 'pending' | 'submitted' | 'graded' | 'late'
 
 export type Assignment = {
-  id:          string
-  title:       string
-  subtitle:    string
-  category:    string
-  createdDate: string        // display string e.g. "Apr 15, 2026"
-  status:      AssignmentStatus
-  due?:        string
-  urgent?:     string
-  body?:       string
-  tags?:       string[]
-  submittedAt?: string
-  score?:      string
-  feedback?:   string
-  showActions?: boolean
+  id:             string
+  title:          string
+  subtitle:       string
+  assignmentType: string 
+  createdDate:    string
+  status:         AssignmentStatus
+  due?:           string
+  urgent?:        string 
+  body?:          string
+  tags?:          string[]
+  score?:         string
+  feedback?:      string
+  showActions?:   boolean
 }
 
-// ─── Status config ────────────────────────────────────────
-export const STATUS_STYLE: Record<AssignmentStatus, string> = {
-  pending:   'bg-orange-50 text-orange-700',
-  submitted: 'bg-blue-50   text-blue-700',
-  graded:    'bg-green-50  text-green-700',
-  late:      'bg-red-50    text-red-700',
-}
-
-export const STATUS_LABEL: Record<AssignmentStatus, string> = {
-  pending:   'Pending',
-  submitted: 'Submitted',
-  graded:    'Graded',
-  late:      'Late',
+// ─── Config Styles ────────────────────────────────────────
+const STATUS_CONFIG: Record<AssignmentStatus, { label: string; style: string }> = {
+  pending:   { label: 'Pending',   style: 'bg-orange-50 text-orange-700 border-orange-100' },
+  submitted: { label: 'Submitted', style: 'bg-blue-50   text-blue-700   border-blue-100' },
+  graded:    { label: 'Graded',    style: 'bg-green-50  text-green-700  border-green-100' },
+  late:      { label: 'Late',      style: 'bg-red-50    text-red-700    border-red-100' },
 }
 
 // ─── Component ────────────────────────────────────────────
 type Props = {
   assignment: Assignment
-  onClick:    () => void
+  onClick?:    () => void
 }
 
 export function AssignmentCard({ assignment: a, onClick }: Props) {
+  const isGraded = a.status === 'graded'
+  const isUrgent = !!a.urgent
+
   return (
     <div
       onClick={onClick}
-      className="bg-white border border-gray-200 rounded-xl px-5 py-5 shadow-sm
-                 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+      className="group relative bg-white border border-gray-200 rounded-2xl p-5 shadow-sm 
+                 hover:border-blue-400 hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden"
     >
-      {/* ── Top row: title + status ── */}
-      <div className="flex justify-between items-start gap-4 mb-3">
-        <div className="min-w-0">
-          <h3 className="text-sm font-medium text-gray-900 leading-snug mb-1">
+      {/* Accent Line dựa trên trạng thái */}
+      <div className={`absolute left-0 top-0 bottom-0 w-1 ${isGraded ? 'bg-green-500' : isUrgent ? 'bg-red-500' : 'bg-transparent'}`} />
+
+      {/* ── Top Section ── */}
+      <div className="flex justify-between items-start gap-4 mb-4">
+        <div className="space-y-1">
+          <h3 className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors leading-tight">
             {a.title}
           </h3>
-          <p className="text-xs text-gray-400 leading-relaxed">{a.subtitle}</p>
+          <p className="text-[11px] text-gray-400 font-medium">{a.subtitle}</p>
         </div>
 
-        <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold ${STATUS_STYLE[a.status]}`}>
-            {STATUS_LABEL[a.status]}
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${STATUS_CONFIG[a.status].style}`}>
+            {STATUS_CONFIG[a.status].label}
           </span>
-          {a.due     && <span className="text-[10.5px] text-gray-400">Due: {a.due}</span>}
-          {a.urgent  && <span className="text-[10.5px] font-semibold text-orange-600">{a.urgent}</span>}
-          {a.score   && <span className="text-base font-medium text-blue-600">{a.score}</span>}
-          {a.status === 'late' && (
-            <span className="text-xs font-medium text-red-600">Overdue</span>
+          
+          {/* Highlight Deadline - Cực kỳ nổi bật */}
+          {isUrgent && (
+            <div className="flex items-center gap-1 bg-red-600 px-2 py-0.5 rounded shadow-sm animate-pulse">
+              <Clock className="w-3 h-3 text-white" />
+              <span className="text-[10px] font-black text-white uppercase tracking-tight">
+                {a.urgent}
+              </span>
+            </div>
+          )}
+          
+          {a.score && (
+            <div className="text-right">
+              <p className="text-[9px] text-gray-400 font-bold uppercase mb-0.5">Score</p>
+              <p className="text-xl font-black text-blue-600 leading-none tracking-tighter">{a.score}</p>
+            </div>
           )}
         </div>
       </div>
 
-      {/* ── Meta row: category + created date ── */}
-      <div className="flex flex-wrap items-center gap-4 mb-3">
-        <span className="flex items-center gap-1.5 text-xs text-gray-500">
-          <Tag className="w-3.5 h-3.5 text-gray-400" />
-          {a.category}
-        </span>
-        <span className="flex items-center gap-1.5 text-xs text-gray-500">
-          <Calendar className="w-3.5 h-3.5 text-gray-400" />
-          Created {a.createdDate}
-        </span>
+      {/* ── Assignment Type & Date ── */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-md">
+          <Tag className="w-3 h-3 text-slate-500" />
+          <span className="text-[11px] font-bold text-slate-700">{a.assignmentType}</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-gray-400">
+          <Calendar className="w-3 h-3" />
+          <span className="text-[11px]">Created {a.createdDate}</span>
+        </div>
       </div>
 
-      {/* ── Body ── */}
+      {/* ── Body (Đề bài) ── */}
       {a.body && (
-        <p className="text-xs text-gray-600 leading-relaxed mb-2">{a.body}</p>
-      )}
-
-      {/* ── Tags ── */}
-      {a.tags && a.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {a.tags.map((tag) => (
-            <span
-              key={tag}
-              className="px-2 py-0.5 rounded-full text-[10.5px] border border-gray-200 text-gray-500 bg-gray-50"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* ── Submitted info ── */}
-      {a.submittedAt && (
-        <p className="text-xs text-gray-400 mt-1">{a.submittedAt}</p>
-      )}
-
-      {/* ── Feedback ── */}
-      {a.feedback && (
-        <div className="mt-3 border-l-[3px] border-blue-500 bg-gray-50 rounded-r-lg px-3 py-2.5">
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-            Teacher Feedback
+        <div className="mb-4">
+          <p className="text-xs text-gray-600 leading-relaxed line-clamp-2 pl-3 border-l-2 border-gray-100 italic">
+            {a.body}
           </p>
-          <p className="text-xs text-gray-700 leading-relaxed">{a.feedback}</p>
         </div>
       )}
 
-      {/* ── Actions ── */}
-      {a.showActions && (
-        <div
-          className="mt-4 flex flex-wrap items-center gap-2"
+      {/* ── Teacher Feedback ── */}
+      {isGraded && a.feedback && (
+        <div className="mt-4 bg-blue-50/50 rounded-xl p-4 border border-blue-100/50 relative">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="bg-blue-500 rounded-full p-1">
+              <MessageSquareQuote className="w-3 h-3 text-white" />
+            </div>
+            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">
+              Teacher Feedback
+            </span>
+          </div>
+          <p className="text-[12px] text-gray-700 leading-snug font-medium pr-4">
+            {a.feedback}
+          </p>
+          <CheckCircle2 className="absolute top-3 right-3 w-4 h-4 text-blue-200" />
+        </div>
+      )}
+
+      {/* ── Footer Actions ── */}
+      {a.showActions && a.status === 'pending' && (
+        <div 
+          className="mt-5 pt-4 border-t border-gray-50 flex items-center justify-between"
           onClick={(e) => e.stopPropagation()}
         >
-          <button className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-            <Download className="w-3.5 h-3.5" />
-            Download brief (PDF)
-          </button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 border border-transparent rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors">
-            <Send className="w-3.5 h-3.5" />
-            Submit assignment
-          </button>
-          <span className="text-[10.5px] text-gray-400">Multiple files · Max 50MB</span>
+          <div className="flex gap-2">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-[11px] font-bold text-gray-700 hover:bg-gray-50 transition-colors">
+              <Download className="w-3.5 h-3.5" />
+              PDF Brief
+            </button>
+            <button className="flex items-center gap-2 px-5 py-1.5 bg-blue-600 rounded-lg text-[11px] font-bold text-white hover:bg-blue-700 shadow-md shadow-blue-100 transition-transform active:scale-95">
+              <Send className="w-3.5 h-3.5" />
+              Submit now
+            </button>
+          </div>
+          <span className="text-[10px] text-gray-400 italic">Max 50MB</span>
         </div>
       )}
     </div>
