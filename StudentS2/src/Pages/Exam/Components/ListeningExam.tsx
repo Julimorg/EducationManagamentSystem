@@ -1,17 +1,16 @@
 import React, { useState, useRef, useCallback } from 'react'
 import { useNavigate }    from 'react-router-dom'
 import { Play, Pause, Volume2 }    from 'lucide-react'
-import { useFullscreenGuard } from '@/Hook/useFullScreenGuard'
 import { toast } from 'react-toastify'
 import { Toaster } from 'sonner'
 import { ExamHeader } from './ExamHeader'
-import { SubmitModal, FullscreenModal } from './ExamModal'
+import { SubmitModal } from './ExamModal'
 
 // ─── Types ────────────────────────────────────────────────
 type FillQuestion = {
-  id:     number
-  label:  string          // field label in form, e.g. "Pick-up date"
-  prefix?: string         // inline text before input
+  id:      number
+  label:   string
+  prefix?: string
 }
 
 type MCQuestion2 = {
@@ -48,11 +47,11 @@ const SECTIONS: Section[] = [
         instruction: 'Complete the form below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.',
         formTitle:   'Car Rental Booking Form',
         questions: [
-          { id: 1,  label: 'Pick-up date'   },
-          { id: 2,  label: 'Car type'        },
-          { id: 3,  label: 'Extra features',  prefix: 'GPS and' },
-          { id: 4,  label: 'Duration'        },
-          { id: 5,  label: 'Total cost',      prefix: '$' },
+          { id: 1, label: 'Pick-up date'    },
+          { id: 2, label: 'Car type'         },
+          { id: 3, label: 'Extra features',  prefix: 'GPS and' },
+          { id: 4, label: 'Duration'         },
+          { id: 5, label: 'Total cost',      prefix: '$' },
         ],
       },
       {
@@ -135,17 +134,12 @@ type Answers = Record<number, string>
 export function ListeningExam({ duration = 30 }: { duration?: number }) {
   const navigate = useNavigate()
 
-  const [activeSection, setActiveSection]   = useState('1')
-  const [answers, setAnswers]               = useState<Answers>({})
-  const [isPlaying, setIsPlaying]           = useState(false)
-  const [volume, setVolume]                 = useState(80)
-  const [showSubmit, setShowSubmit]         = useState(false)
-  const [showFullscreen, setShowFullscreen] = useState(false)
-  const audioRef                            = useRef<HTMLAudioElement>(null)
-
-  const { enterFullscreen, exitFullscreen } = useFullscreenGuard({
-    onExit: () => setShowFullscreen(true),
-  })
+  const [activeSection, setActiveSection] = useState('1')
+  const [answers, setAnswers]             = useState<Answers>({})
+  const [isPlaying, setIsPlaying]         = useState(false)
+  const [volume, setVolume]               = useState(80)
+  const [showSubmit, setShowSubmit]       = useState(false)
+  const audioRef                          = useRef<HTMLAudioElement>(null)
 
   const section = SECTIONS.find((s) => s.key === activeSection)!
 
@@ -169,7 +163,6 @@ export function ListeningExam({ duration = 30 }: { duration?: number }) {
   const handleSave = useCallback(() => toast.success('Answers saved'), [])
 
   function handleSubmit() {
-    exitFullscreen()
     navigate('/exams')
   }
 
@@ -200,7 +193,7 @@ export function ListeningExam({ duration = 30 }: { duration?: number }) {
         >
           {isPlaying
             ? <Pause className="w-4 h-4 fill-white" />
-            : <Play  className="w-4 h-4 fill-white"  />}
+            : <Play  className="w-4 h-4 fill-white" />}
         </button>
         <span className="text-xs text-gray-500 font-medium">
           Audio Track — {section.label}
@@ -260,11 +253,6 @@ export function ListeningExam({ duration = 30 }: { duration?: number }) {
         onCancel={() => setShowSubmit(false)}
         onSubmit={handleSubmit}
       />
-      <FullscreenModal
-        open={showFullscreen}
-        onReturnFullscreen={() => { setShowFullscreen(false); enterFullscreen() }}
-        onSubmit={handleSubmit}
-      />
     </div>
   )
 }
@@ -298,7 +286,6 @@ function FormGroup({
                   value={answers[q.id] ?? ''}
                   onChange={(e) => onAnswer(q.id, e.target.value)}
                   className="flex-1 border-b-2 border-gray-300 focus:border-orange-400 outline-none px-1 py-0.5 bg-transparent text-xs text-gray-900"
-                  placeholder=""
                 />
               </div>
             </div>

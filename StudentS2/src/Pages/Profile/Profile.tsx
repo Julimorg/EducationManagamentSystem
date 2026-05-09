@@ -3,6 +3,7 @@ import { ProfileHero } from './Components/ProfileHero'
 import { ChangePasswordModal } from './Components/ChangePassword'
 import { EditProfileModal } from './Components/EditProfile'
 import { ProfileInfo } from './Components/ProfileInfo'
+import { StudentReport } from './Components/ProfileReport'
 
 export type ProfileData = {
   userName:    string
@@ -63,7 +64,7 @@ export function ProfilePage() {
 
       {/* Info sections */}
       <ProfileInfo profile={profile} />
-
+      <StudentReport />
       {/* Modals */}
       <EditProfileModal
         open={editOpen}
